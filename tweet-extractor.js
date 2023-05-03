@@ -29,7 +29,7 @@ router.post("/", async (req, response, next) => {
   } else {
 
     var cond = false
-    cond = (dataKeys.includes("user_id") && data['user_id'] != '') ? (dataKeys.includes("username") && data['username'] != '') ? (dataKeys.includes("twitter_id") && data['twitter_id'] != '') ? (dataKeys.includes("env") && data['env'] != '') ? (data['env'] == 'dev' || data['env'] == 'prd') ? (dataKeys.includes("results")) ? true : response.status(500).send({ 'error': "Results not provided" }) : response.status(500).send({ 'error': "env should be either dev or prd" }) : response.status(500).send({ 'error': "env not provided" }) : response.status(500).send({ 'error': "Twitter ID not provided" }) : response.status(500).send({ 'error': "Username not provided" }) : response.status(500).send({ 'error': "User ID not provided" })
+    cond = (dataKeys.includes("user_id") && data['user_id'] != '') ? (dataKeys.includes("username") && data['username'] != '') ? (dataKeys.includes("twitter_id") && data['twitter_id'] != '') ? (dataKeys.includes("env") && data['env'] != '') ? (data['env'] == 'dev' || data['env'] == 'prd') ? (dataKeys.includes("results")) ? true : response.status(500).send({ 'error': "Internal app error: Results not provided" }) : response.status(500).send({ 'error': "Internal app error: env should be either dev or prd" }) : response.status(500).send({ 'error': "Internal app error: env not provided" }) : response.status(500).send({ 'error': "Internal app error: Twitter ID not provided" }) : response.status(500).send({ 'error': "Internal app error: Username not provided" }) : response.status(500).send({ 'error': "Internal app error: User ID not provided" })
 
     if (cond === true) {
 
@@ -58,13 +58,15 @@ router.post("/", async (req, response, next) => {
               ))
 
               Promise.all([dataCsv]).then((values) => {
-                alldataCsv = alldataCsv.concat(values[0].filter(Boolean))
+                alldataCsv = alldataCsv.concat(values[0].filter(Boolean).filter((item) => {
+                  return item.Completion.length >= 20
+                }))
               });
 
             }
           })
           .catch(function(error) {
-            response.status(406).send({ error: error.cause, message: "Failed to create Tweets file" })
+            response.status(406).send({ error: "Internal app error: " + error.cause, message: "Failed to create Tweets file" })
           });
       }
 
@@ -105,9 +107,10 @@ router.post("/", async (req, response, next) => {
           })
           .catch(function(error) {
             fs.unlink(filename, (err) => {
-              response.status(406).send({ error: error.cause, message: "Failed to upload Tweets file " })
+              response.status(406).send({ error: "Internal app error: " + error.cause, message: "Failed to upload Tweets file" })
             })
           });
+
       });
 
     }

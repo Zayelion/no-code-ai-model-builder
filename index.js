@@ -27,7 +27,7 @@ app.post('/create-open-ai-model', async (req, res) => {
   if (dataKeys.includes("estimate") && data['estimate'] == 'y') {
 
     var cond = false;
-    cond = dataKeys.includes("csvUrl") && data['csvUrl'] != '' ? dataKeys.includes("model") && data['model'] != '' ? true : res.status(500).send({ 'error': "Model not provided" }) : res.status(500).send({ 'error': "CSV URL not provided" })
+    cond = dataKeys.includes("csvUrl") && data['csvUrl'] != '' ? dataKeys.includes("model") && data['model'] != '' ? true : res.status(500).send({ 'error': "Internal app error: Model not provided" }) : res.status(500).send({ 'error': "Internal app error: CSV URL not provided" })
 
     if (cond == true) {
 
@@ -67,7 +67,7 @@ app.post('/create-open-ai-model', async (req, res) => {
                   break;
                 default:
                   condi = false
-                  res.status(500).send({ 'error': "Model is incorrect" })
+                  res.status(500).send({ 'error': "Internal app error: Model is incorrect" })
                   break;
               }
 
@@ -90,11 +90,11 @@ app.post('/create-open-ai-model', async (req, res) => {
     if (dataKeys.includes("free") && data['free'] == 'yes') {
 
       var cond = false;
-      cond = dataKeys.includes("csvUrl") && data['csvUrl'] != '' ? dataKeys.includes("apiKey") && data['apiKey'] != '' ? dataKeys.includes("model") && data['model'] != '' ? true : res.status(500).send({ 'error': "Model not provided" }) : res.status(500).send({ 'error': "API key not provided" }) : res.status(500).send({ 'error': "CSV URL not provided" })
+      cond = dataKeys.includes("csvUrl") && data['csvUrl'] != '' ? dataKeys.includes("apiKey") && data['apiKey'] != '' ? dataKeys.includes("model") && data['model'] != '' ? true : res.status(500).send({ 'error': "Internal app error: Model not provided" }) : res.status(500).send({ 'error': "Internal app error: API key not provided" }) : res.status(500).send({ 'error': "Internal app error: CSV URL not provided" })
       if (cond == true) {
 
         if (!data['csvUrl'].includes('.csv')) {
-          res.status(500).send({ 'error': "Invalid file format" })
+          res.status(500).send({ 'error': "Internal app error: Invalid file format, please upload a valid .csv file" })
         } else {
 
           var arr = []
@@ -117,7 +117,7 @@ app.post('/create-open-ai-model', async (req, res) => {
                   const arr2 = arr.map((item) => (
                     {
                       prompt: item[colOne] + "\n\n###\n\n",
-                      completion: item[colTwo] + "###"
+                      completion: ' ' + item[colTwo] + " END"
                     }
                   ))
 
@@ -145,28 +145,28 @@ app.post('/create-open-ai-model', async (req, res) => {
                       suffix: data['model_name'] ? 'trial-' + data['model_name'] : 'trial-my-model'
                     }).then(response2 => {
                       res.status(200).send({ "message": "Success", "id": response2.data.id, "num_records": arr.length, "num_chars": charLength, "file_size": fileSize })
-                    }).catch(err => { res.status(401).send({ 'error': err.message, 'message': 'Creation failed' }) });
+                    }).catch(err => { res.status(401).send({ 'error': "OpenAI error: " + err.message, 'message': 'Creation failed' }) });
 
-                  }).catch(err => { res.status(401).send({ 'error': err.message, message: "Invalid API key" }) });
+                  }).catch(err => { res.status(401).send({ 'error': "OpenAI error: " + err.message, message: "Invalid API key" }) });
 
                   await fs.unlink(filename)
                 })
                 .on("error", function(error) {
-                  res.status(response.status).send({ 'error': response.error, 'message': "error reading CSV URL" })
+                  res.status(response.status).send({ 'error': "Internal app error: " + response.error, 'message': "Issue uploading your file, please re-upload and try again" })
                 });
             })
-            .catch(err => { res.status(403).send({ 'error': "CSV URL unreadable" }) });
+            .catch(err => { res.status(403).send({ 'error': "Internal app error: CSV URL unreadable" }) });
         }
       }
 
     } else {
 
       var cond = false;
-      cond = dataKeys.includes("csvUrl") && data['csvUrl'] != '' ? dataKeys.includes("apiKey") && data['apiKey'] != '' ? dataKeys.includes("model") && data['model'] != '' ? true : res.status(500).send({ 'error': "Model not provided" }) : res.status(500).send({ 'error': "API key not provided" }) : res.status(500).send({ 'error': "CSV URL not provided" })
+      cond = dataKeys.includes("csvUrl") && data['csvUrl'] != '' ? dataKeys.includes("apiKey") && data['apiKey'] != '' ? dataKeys.includes("model") && data['model'] != '' ? true : res.status(500).send({ 'error': "Internal app error: Model not provided" }) : res.status(500).send({ 'error': "Internal app error: API key not provided" }) : res.status(500).send({ 'error': "Internal app error: CSV URL not provided" })
       if (cond == true) {
 
         if (!data['csvUrl'].includes('.csv')) {
-          res.status(500).send({ 'error': "Invalid file format" })
+          res.status(500).send({ 'error': "Internal app error: Invalid file format, please upload a valid .csv file" })
         } else {
 
           var arr = []
@@ -189,7 +189,7 @@ app.post('/create-open-ai-model', async (req, res) => {
                   const arr2 = arr.map((item) => (
                     {
                       prompt: item[colOne] + "\n\n###\n\n",
-                      completion: item[colTwo] + "###"
+                      completion: ' ' + item[colTwo] + " END"
                     }
                   ))
 
@@ -217,17 +217,16 @@ app.post('/create-open-ai-model', async (req, res) => {
                       suffix: data['model_name'] ? data['model_name'] : 'my-model'
                     }).then(response2 => {
                       res.status(200).send({ "message": "Success", "id": response2.data.id, "num_records": arr.length, "num_chars": charLength, "file_size": fileSize })
-                    }).catch(err => { res.status(401).send({ 'error': err.message, 'message': 'Creation failed' }) });
+                    }).catch(err => { res.status(err.response.status).send({ 'error': "Open AI error: "+err.response.data.error.message }) });
 
-                  }).catch(err => { res.status(401).send({ 'error': err.message, message: "Invalid API key" }) });
-
+                  }).catch(err => { res.status(err.response.status).send({ 'error': "Open AI error: "+err.response.data.error.message }) });
                   await fs.unlink(filename)
                 })
                 .on("error", function(error) {
-                  res.status(response.status).send({ 'error': response.error, 'message': "error reading CSV URL" })
+                  res.status(response.status).send({ 'error': "Internal app error: " + response.error, 'message': "Issue uploading your file, please re-upload and try again" })
                 });
             })
-            .catch(err => { res.status(403).send({ 'error': "CSV URL unreadable" }) });
+            .catch(err => { res.status(403).send({ 'error': "Internal app error: CSV URL unreadable" }) });
         }
       }
     }
@@ -286,14 +285,16 @@ app.post('/open-ai-models', async (req, res) => {
 
         }
 
-      }).catch(err => { res.status(400).send({ 'error': err.message }) })
+      }).catch(err => { 
+        res.status(err.response.status).send({ 'error': "Open AI error: "+err.response.data.error.message }) 
+      })
 
     } catch (err) {
-      res.status(401).send({ 'error': "Invalid Credentials (Incorrect API Key)" })
+      res.status(err.response.status).send({ 'error': "Open AI error: "+ err.response.data.error.message })
     }
 
   } else {
-    res.status(500).send({ 'error': "No API key found" })
+    res.status(500).send({ 'error': "Internal app error: No API key found" })
   }
 })
 
